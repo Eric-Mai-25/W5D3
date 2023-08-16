@@ -31,11 +31,11 @@ class User
 
     end
 
-    def self.authored_questions(user_id)
+    def authored_questions(user_id)
         Question.find_by_author_id(user_id)
     end
 
-    def self.authored_replies(user_id)
+    def authored_replies(user_id)
         Reply.find_by_user_id(user_id)
     end
 
@@ -63,7 +63,6 @@ class Question
         data_array = data.map { |datum| Question.new(datum)}
         raise "No questions with this id" if data_array.empty?
         data_array
-
     end
 
     def self.find_by_author_id(author_id)
@@ -71,7 +70,7 @@ class Question
         SELECT *
         FROM questions
         WHERE user_id = ?
-    SQL
+        SQL
         data_array = data.map { |datum| Question.new(datum)}
         raise "No questions by author" if data_array.empty?
         data_array
@@ -83,6 +82,27 @@ class Question
         @title = options['title']
         @user_id = options['user_id']
     end
+
+    def author
+        data = QuestionDatabase.instance.execute(<<-SQL, @user_id)
+            SELECT *
+            FROM users
+            WHERE id = ?
+        SQL
+
+        data.map { |datum| User.new(datum) }
+    end
+
+    def replies
+        data = QuestionDatabase.instance.execute(<<-SQL, @id)
+            SELECT *
+            FROM replies
+            WHERE question_id = ?
+        SQL
+
+        data.map { |datum| Reply.new(datum) }
+    end
+
 end
 
 class QuestionFollow
@@ -109,6 +129,7 @@ class QuestionFollow
     end
 end
 
+
 class Reply
     def self.all
         data = QuestionDatabase.instance.execute("SELECT * FROM replies")
@@ -126,8 +147,6 @@ class Reply
         data_array =data.map { |datum| Reply.new(datum)}
         raise "No replies with id" if data_array.empty?
         data_array
-
-
     end
 
     def self.find_by_user_id(user_id)
@@ -160,6 +179,48 @@ class Reply
         @question_id = options['question_id']
         @parent_id = options['parent_id']
         @user_id = options['user_id']
+    end
+
+    def author
+        data = QuestionDatabase.instance.execute(<<-SQL, @user_id)
+            SELECT *
+            FROM users
+            WHERE id = ?
+        SQL
+
+        data.map { |datum| User.new(datum) }
+    end
+
+    def question
+        data = QuestionDatabase.instance.execute(<<-SQL, @question_id)
+            SELECT *
+            FROM questions
+            WHERE id = ?
+        SQL
+
+        data.map { |datum| Question.new(datum) }
+    end
+
+    def parent_reply
+        data = QuestionDatabase.instance.execute(<<-SQL, @parent_id)
+            SELECT *
+            FROM replies
+            WHERE id = ?
+        SQL
+
+        data_arr = data.map { |datum| Reply.new(datum) }
+        raise "This reply is the first one." if data_arr.empty?
+    end
+
+    def child_replies
+        data = QuestionDatabase.instance.execute(<<-SQL, @id)
+            SELECT *
+            FROM replies
+            WHERE parent_id = ?
+        SQL
+
+        data_arr = data.map { |datum| Reply.new(datum) }
+        raise "This reply has no replies." if data_arr.empty?
     end
 end
 
