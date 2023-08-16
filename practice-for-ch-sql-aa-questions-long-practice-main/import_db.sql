@@ -108,5 +108,10 @@ VALUES
 
 INSERT INTO
     question_follows(question_id, user_id)
-VALUES 
-    ((SELECT id FROM questions WHERE id = 1) , (SELECT id FROM users WHERE id = 2));
+VALUES
+    ((SELECT id FROM questions WHERE id = 1) , (SELECT id FROM users WHERE id = 2)),
+    ((SELECT id FROM questions WHERE id = 1) , (SELECT id FROM users WHERE id = 3)),
+    ((SELECT id FROM questions WHERE id = 1) , (SELECT id FROM users WHERE id = 1)),
+    ((SELECT id FROM questions WHERE id = 3) , (SELECT id FROM users WHERE id = 1)),
+    ((SELECT id FROM questions WHERE id = 3) , (SELECT id FROM users WHERE id = 2)),
+    ((SELECT id FROM questions WHERE id = 2) , (SELECT id FROM users WHERE id = 1));

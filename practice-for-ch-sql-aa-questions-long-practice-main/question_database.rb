@@ -44,6 +44,10 @@ class User
         @fname = options['fname']
         @lname = options['lname']
     end
+
+    def followed_questions
+        QuestionFollow.followed_questions_for_user_id(@id)
+    end
 end
 
 class Question
@@ -103,6 +107,10 @@ class Question
         data.map { |datum| Reply.new(datum) }
     end
 
+    def followers
+        QuestionFollow.followers_for_question_id(@id)
+    end
+
 end
 
 class QuestionFollow
@@ -121,17 +129,45 @@ class QuestionFollow
         SQL
         data.map { |datum| QuestionFollow.new(datum)}
     end
-     
+
     def self.followers_for_question_id(question_id)
         data = QuestionDatabase.instance.execute(<<-SQL, question_id)
             SELECT *
-            FROM questions_follows
+            FROM question_follows
             JOIN users
-            ON quesion_follows.user_id = users.id
-            WHERE question_id = ?
+            ON question_follows.user_id = users.id
+            WHERE question_follows.question_id = ?
         SQL
         data.map { |datum| User.new(datum)}
-        
+    end
+
+    def self.followed_questions_for_user_id(user_id)
+        data = QuestionDatabase.instance.execute(<<-SQL, user_id)
+            SELECT *
+            FROM question_follows
+            JOIN questions
+            ON question_follows.question_id = questions.id
+            WHERE question_follows.user_id = ?
+        SQL
+        data.map { |datum| Question.new(datum)}
+    end
+
+    def self.most_followed_question(n)
+        data = QuestionDatabase.instance.execute(<<-SQL, n)
+            SELECT *, COUNT(question_follows.question_id) AS followers
+            FROM question_follows
+            JOIN questions
+            ON question_follows.question_id = questions.id
+            GROUP BY question_follows.question_id
+            ORDER BY followers DESC
+            LIMIT ?
+        SQL
+
+        data.map { |datum| Question.new(datum)}
+    end
+
+    def self.most_followed
+        QuestionFollow.most_followed_question(1)
     end
 
     def initialize(options)
@@ -139,8 +175,6 @@ class QuestionFollow
         @question_id = options['question_id']
         @user_id = options['user_id']
     end
-
-
 end
 
 
