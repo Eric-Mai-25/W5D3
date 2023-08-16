@@ -11,10 +11,10 @@ class QuestionDatabase < SQLite3::Database
 
 end
 
-class Users
+class User
     def self.all
         data = QuestionDatabase.instance.execute("SELECT * FROM users")
-        data.map { |datum| Users.new(datum)}
+        data.map { |datum| User.new(datum)}
     end
 
     attr_accessor :fname, :lname
@@ -25,7 +25,18 @@ class Users
             FROM users
             WHERE fname = ? AND lname = ?
         SQL
-        data.map { |datum| Users.new(datum)}
+        data_array =data.map { |datum| User.new(datum)}
+        raise "No user with this name" if data_array.empty?
+        data_array
+
+    end
+
+    def self.authored_questions(user_id)
+        Question.find_by_author_id(user_id)
+    end
+
+    def self.authored_replies(user_id)
+        Reply.find_by_user_id(user_id)
     end
 
     def initialize(options)
@@ -35,10 +46,10 @@ class Users
     end
 end
 
-class Questions
+class Question
     def self.all
         data = QuestionDatabase.instance.execute("SELECT * FROM questions")
-        data.map { |datum| Questions.new(datum)}
+        data.map { |datum| Question.new(datum)}
     end
 
     attr_accessor :title, :body, :user_id
@@ -49,7 +60,21 @@ class Questions
             FROM questions
             WHERE id = ?
         SQL
-        data.map { |datum| Questions.new(datum)}
+        data_array = data.map { |datum| Question.new(datum)}
+        raise "No questions with this id" if data_array.empty?
+        data_array
+
+    end
+
+    def self.find_by_author_id(author_id)
+        data = QuestionDatabase.instance.execute(<<-SQL, author_id)
+        SELECT *
+        FROM questions
+        WHERE user_id = ?
+    SQL
+        data_array = data.map { |datum| Question.new(datum)}
+        raise "No questions by author" if data_array.empty?
+        data_array
     end
 
     def initialize(options)
@@ -60,10 +85,10 @@ class Questions
     end
 end
 
-class QuestionFollows
+class QuestionFollow
     def self.all
         data = QuestionDatabase.instance.execute("SELECT * FROM question_follows")
-        data.map { |datum| QuestionFollows.new(datum)}
+        data.map { |datum| QuestionFollow.new(datum)}
     end
 
     attr_accessor :question_id, :user_id
@@ -74,7 +99,7 @@ class QuestionFollows
             FROM questions_follows
             WHERE id = ?
         SQL
-        data.map { |datum| QuestionFollows.new(datum)}
+        data.map { |datum| QuestionFollow.new(datum)}
     end
 
     def initialize(options)
@@ -84,10 +109,10 @@ class QuestionFollows
     end
 end
 
-class Replies
+class Reply
     def self.all
         data = QuestionDatabase.instance.execute("SELECT * FROM replies")
-        data.map { |datum| Replies.new(datum)}
+        data.map { |datum| Reply.new(datum)}
     end
 
     attr_accessor :body, :question_id, :parent_id, :user_id
@@ -98,7 +123,35 @@ class Replies
             FROM replies
             WHERE id = ?
         SQL
-        data.map { |datum| Replies.new(datum)}
+        data_array =data.map { |datum| Reply.new(datum)}
+        raise "No replies with id" if data_array.empty?
+        data_array
+
+
+    end
+
+    def self.find_by_user_id(user_id)
+        data = QuestionDatabase.instance.execute(<<-SQL, user_id)
+            SELECT *
+            FROM replies
+            WHERE user_id = ?
+        SQL
+        data_array =data.map { |datum| Reply.new(datum)}
+        raise "No replies from user" if data_array.empty?
+        data_array
+
+    end
+
+    def self.find_by_question_id(question_id)
+        data = QuestionDatabase.instance.execute(<<-SQL, question_id)
+            SELECT *
+            FROM replies
+            WHERE question_id = ?
+        SQL
+        data_array =data.map { |datum| Reply.new(datum)}
+        raise "This question has no replies" if data_array.empty?
+        data_array
+
     end
 
     def initialize(options)
@@ -110,10 +163,10 @@ class Replies
     end
 end
 
-class QuestionLikes
+class QuestionLike
     def self.all
         data = QuestionDatabase.instance.execute("SELECT * FROM question_likes")
-        data.map { |datum| QuestionLikes.new(datum)}
+        data.map { |datum| QuestionLike.new(datum)}
     end
 
     attr_accessor :question_id, :user_id
@@ -124,7 +177,7 @@ class QuestionLikes
             FROM question_likes
             WHERE id = ?
         SQL
-        data.map { |datum| QuestionLikes.new(datum)}
+        data.map { |datum| QuestionLike.new(datum)}
     end
 
     def initialize(options)
