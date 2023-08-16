@@ -1,4 +1,9 @@
 PRAGMA foreign_keys = ON;
+DROP TABLE question_likes;
+DROP TABLE replies;
+DROP TABLE question_follows;
+DROP TABLE questions;
+DROP TABLE users;
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
@@ -17,10 +22,12 @@ CREATE TABLE questions (
 );
 
 CREATE TABLE question_follows (
-    SELECT *
-    FROM users
-    JOIN questions
-    ON users(id) = questions(user_id)
+    id INTEGER PRIMARY KEY,
+    question_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+
+    FOREIGN KEY (question_id) REFERENCES questions(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE replies (
@@ -58,8 +65,8 @@ INSERT INTO
     questions(title, body, user_id)
 VALUES
     ('HALP', 'How to SQL', (SELECT id FROM users WHERE fname = 'Eric' AND lname = 'Mai')),
-    ('I am hungry', 'Can we extend lunch', (SELECT id FROM users WHERE fname = 'Julia' AND 'Kahn')),
-    ('Eat speed', 'Looking for tips', (SELECT id FROM users WHERE fname = 'David' AND 'Pollack'));
+    ('I am hungry', 'Can we extend lunch', (SELECT id FROM users WHERE fname = 'Julia' AND lname = 'Kahn')),
+    ('Eat speed', 'Looking for tips', (SELECT id FROM users WHERE fname = 'David' AND lname = 'Pollack'));
 
 INSERT INTO
     replies(body, question_id, parent_id, user_id)
@@ -71,7 +78,7 @@ VALUES
         NULL,
         (SELECT id
         FROM users
-        WHERE id = 1),)
+        WHERE id = 1)),
     ('Use your hands',
         (SELECT id
         FROM questions
@@ -81,7 +88,7 @@ VALUES
         WHERE id = 1),
         (SELECT id
         FROM users
-        WHERE id = 2),)
+        WHERE id = 2)),
     ('No',
         (SELECT id
         FROM questions
@@ -89,7 +96,7 @@ VALUES
         NULL,
         (SELECT id
         FROM users
-        WHERE id = 3),);
+        WHERE id = 3));
 
 INSERT INTO
     question_likes(question_id, user_id)
